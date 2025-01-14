@@ -60,41 +60,55 @@ print(plot)
 
 
 ```
+
 ```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readxl)
+
 # Load the data from the Excel file
 data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Gender")
 
 # Prepare the data
 trend_data <- data %>%
   filter(Year >= 2018 & Year <= 2023) %>%
-  select(Substance, Gender, Year, `Crude Rate Per 100,000`,
-         `Crude Rate Lower 95% Confidence Interval`,
-         `Crude Rate Upper 95% Confidence Interval`) %>%
+  select(Substance, Gender, Year, `Crude Rate Per 100,000`) %>%
   mutate(Gender = as.factor(Gender),
-         Substance = as.factor(Substance))
+         Substance = factor(Substance, levels = c("Opioid", "Stimulant", 
+                                                  "Alcohol", "Cocaine", 
+                                                  "Benzodiazepines", "Other")))
 
-# Create the line graph with confidence intervals, points, and labels
+# Calculate the gap (Male - Female) for each Substance and Year
+gap_data <- trend_data %>%
+  spread(key = Gender, value = `Crude Rate Per 100,000`) %>%
+  mutate(Gap = Male - Female)
+
+# Merge the gap data back into the original trend data
+trend_data <- trend_data %>%
+  left_join(gap_data, by = c("Substance", "Year"))
+
+# Create the plot with gap numbers below the X-axis
 plot <- ggplot(trend_data, aes(x = Year, y = `Crude Rate Per 100,000`, 
                                color = Gender, group = Gender)) +
-  # Add confidence interval ribbons
-  geom_ribbon(aes(ymin = `Crude Rate Lower 95% Confidence Interval`, 
-                  ymax = `Crude Rate Upper 95% Confidence Interval`, 
-                  fill = Gender), alpha = 0.2, color = NA) +
-  # Add lines (solid lines for both genders)
-  geom_line(size = 1, linetype = "solid") +
+  # Add lines for each gender
+  geom_line(size = 1.2) +
   # Add points for each year
-  geom_point(size = 2) +
+  geom_point(size = 2.5) +
   # Add text labels for each point showing the Crude Rate
   geom_text(aes(label = round(`Crude Rate Per 100,000`, 1)), 
             vjust = -0.5, size = 3) +
-  facet_wrap(~ Substance, scales = "fixed", ncol = 2) +  # Set 2 plots per row
-  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) + # Ensure X-axis has every year
-  scale_y_continuous(breaks = seq(0, max(trend_data$`Crude Rate Per 100,000`), by = 2)) +  # Set Y-axis break interval to 2
-  labs(title = "Trends in Crude Mortality Rates by Substance and Gender (2018-2023)",
+  # Add red text showing the gap value below the X-axis
+  geom_text(data = gap_data, aes(x = Year, y = -1, label = round(Gap, 1)), 
+            color = "blue", size = 3, inherit.aes = FALSE) +
+  facet_wrap(~ Substance, scales = "fixed", ncol = 2) +  # Arrange with 2 plots per row
+  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) +  # Ensure X-axis has every year
+  scale_y_continuous(breaks = seq(0, max(trend_data$`Crude Rate Per 100,000`, na.rm = TRUE), by = 2)) +  # Set Y-axis interval to 2
+  labs(title = "Crude Mortality Rates by Substance and Gender (Gap Below X-Axis)",
        x = "Year",
        y = "Crude Rate Per 100,000",
-       color = "Gender",
-       fill = "Gender") +
+       color = "Gender") +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -104,9 +118,248 @@ plot <- ggplot(trend_data, aes(x = Year, y = `Crude Rate Per 100,000`,
     legend.position = "bottom"
   )
 
-plot <- plot + 
-  theme(plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt"))  # 
+# Save the plot as a PDF file
+ggsave("Crude_Mortality_Rates_Reordered.pdf", plot = plot, width = 14, height = 10, dpi = 300)
+
+# Print the plot (optional)
 print(plot)
 
 ```
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readxl)
+
+# Load the data from the Excel file
+data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Gender")
+
+# Prepare the data
+trend_data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%
+  select(Substance, Gender, Year, `Crude Rate Per 100,000`) %>%
+  mutate(Gender = as.factor(Gender),
+         Substance = as.factor(Substance))
+
+# Calculate the gap (Male - Female) for each Substance and Year
+gap_data <- trend_data %>%
+  spread(key = Gender, value = `Crude Rate Per 100,000`) %>%
+  mutate(Gap = Male - Female) %>%
+  select(Substance, Year, Gap)
+
+# Create a new trend graph showing gap trends for all substances
+gap_trend_plot <- ggplot(gap_data, aes(x = Year, y = Gap, color = Substance, group = Substance)) +
+  geom_line(size = 1.2, alpha = 0.7) +  # Add lines for each substance with transparency
+  geom_point(size = 3, alpha = 0.7) +   # Add points for each year with transparency
+  # Add text labels for gap values
+  geom_text(aes(label = round(Gap, 1)), vjust = -0.5, size = 3) +
+  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) +  # Ensure X-axis has every year
+  scale_y_continuous(breaks = seq(floor(min(gap_data$Gap, na.rm = TRUE)), 
+                                  ceiling(max(gap_data$Gap, na.rm = TRUE)), by = 2)) +  # Y-axis interval = 2
+  labs(title = "Gap Trends (Male - Female) by Substance (2018-2023)",
+       x = "Year",
+       y = "Gap (Male - Female)",
+       color = "Substance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "right",  # Move legend to the right
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# Save the new graph as a PDF file
+ggsave("Gap_Trends_By_Substance_Right_Legend.pdf", plot = gap_trend_plot, width = 12, height = 8, dpi = 300)
+
+# Print the plot (optional)
+print(gap_trend_plot)
+
+```
+
+
+```{r}
+# Load required libraries
+library(readxl)
+library(ggplot2)
+library(dplyr)
+
+# Read the data from the 'Race' sheet of your Excel file
+file_path <- "drugabuse-non hispanic.xlsx"
+race_data <- read_excel(file_path, sheet = "Race")
+
+# Clean and preprocess the data
+race_data <- race_data %>%
+  filter(
+    `Single Race 6` != "Native Hawaiian or Other Pacific Islander"  # Exclude this race
+  ) %>%
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Convert to numeric, invalid entries become NA
+    Year = as.integer(Year)                  # Ensure `Year` is integer
+  ) %>%
+  filter(!is.na(`Crude Rate`))  # Remove rows with NA in `Crude Rate`
+
+# Define custom order for substances
+custom_order <- c("Opioid", "Stimulant", "Alcohol", "Cocaine", "Benzodiazepines", "Other")
+race_data$Substance <- factor(race_data$Substance, levels = custom_order)
+
+# Create a combined plot using ggplot2 with facet_wrap
+p <- ggplot(race_data, aes(x = Year, y = `Crude Rate`, color = `Single Race 6`, group = `Single Race 6`)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_text(aes(label = round(`Crude Rate`, 1)),  # Add crude rate as labels rounded to 1 decimal
+            size = 3, 
+            vjust = -0.5, 
+            check_overlap = TRUE) +  # Avoid overlapping labels
+  facet_wrap(~Substance, ncol = 2, scales = "free_y") +  # Two plots per row, free y-axis scaling
+  labs(
+    title = "Crude Rate Trends by Substance and Race (2018-2023)",
+    x = "Year",
+    y = "Crude Rate",
+    color = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",  # Move legend to the right
+    strip.text = element_text(size = 12, face = "bold"),  # Format facet labels
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x-axis labels for better readability
+    panel.spacing = unit(1, "lines")  # Adjust spacing between facets
+  )
+
+# Print the plot
+print(p)
+
+output_file <- "Crude_Rate_Trends_Filtered.pdf"
+ggsave(output_file, plot = p, device = "pdf", width = 14, height = 12)
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: Race-gender)
+data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Race-gender")
+
+# Prepare the data
+trend_data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%
+  select(Substance, `Single Race 6`, Gender, Year, `Crude Rate`) %>%
+  mutate(
+    Gender = as.factor(Gender),
+    Substance = as.factor(Substance),
+    `Single Race 6` = as.factor(`Single Race 6`),
+    `Crude Rate` = suppressWarnings(as.numeric(`Crude Rate`)),  # Convert Crude Rate to numeric, suppress warnings
+    Crude_Rate_Label = ifelse(is.na(`Crude Rate`), "NA", round(`Crude Rate`, 1)) # Create label with NA handled
+  )
+
+# Create a trend graph for each Substance
+trend_plot <- ggplot(trend_data, aes(x = Year, y = `Crude Rate`, color = Gender, group = Gender)) +
+  geom_line(size = 1.2) +  # Add lines for each gender
+  geom_point(size = 3) +   # Add points for each year
+  # Add text labels for each point showing the Crude Rate or NA
+  geom_text(aes(label = Crude_Rate_Label), vjust = -0.8, size = 3.5) +
+  facet_grid(`Single Race 6` ~ Substance, scales = "fixed") +  # Unified Y-axis across all groups
+  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) +  # Ensure X-axis shows all years
+  labs(title = "Crude Mortality Rate Trends by Substance and Race (2018-2023)",
+       x = "Year",
+       y = "Crude Rate (Per 100,000)",
+       color = "Gender") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text.y = element_blank(),  # Remove Y-axis labels
+    axis.ticks.y = element_blank(), # Remove Y-axis ticks
+    axis.text.x = element_text(size = 10, angle = 0),
+    axis.title.y = element_blank(), # Remove Y-axis title
+    axis.title.x = element_text(size = 12),
+    strip.text = element_text(size = 10),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# Print the plot
+print(trend_plot)
+
+# Save the plot as a PDF file
+ggsave("Race_Gender_Crude_Rate_Trends.pdf", plot = trend_plot, width = 15, height = 20, dpi = 300)
+
+```
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyr)
+
+# Load the data from the Excel file (Sheet: Race-gender)
+data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Race-gender")
+
+# Prepare the data
+trend_data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%
+  select(Substance, `Single Race 6`, Gender, Year, `Crude Rate`) %>%
+  mutate(
+    Gender = as.factor(Gender),
+    Substance = as.factor(Substance),
+    `Single Race 6` = as.factor(`Single Race 6`),
+    `Crude Rate` = suppressWarnings(as.numeric(`Crude Rate`))  # Convert Crude Rate to numeric
+  )
+
+# Calculate the gap (Male - Female) for each Substance, Single Race, and Year
+gap_data <- trend_data %>%
+  pivot_wider(names_from = Gender, values_from = `Crude Rate`) %>%
+  mutate(Gap = Male - Female) %>%  # Calculate the gap
+  select(Substance, `Single Race 6`, Year, Gap)  # Keep only relevant columns
+
+# Define custom order for substances
+custom_order <- c("Opioid", "Stimulant", "Alcohol", "Cocaine", "Benzodiazepines", "Other")
+gap_data$Substance <- factor(gap_data$Substance, levels = custom_order)
+
+# Create the gap trend graph
+gap_plot <- ggplot(gap_data, aes(x = Year, y = Gap, color = `Single Race 6`, group = `Single Race 6`)) +
+  geom_line(size = 1.2) +  # Add lines for each Single Race group
+  geom_point(size = 3) +   # Add points for each year
+  geom_text(aes(label = round(Gap, 1)), vjust = -0.5, size = 3.5) +  # Add text labels for gap values
+  facet_wrap(~ Substance, scales = "free_y", nrow = 3) +  # Custom facet order
+  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) +  # Ensure X-axis shows all years
+  labs(
+    title = "Gap Trends (Male - Female) by Substance and Race (2018-2023)",
+    x = "Year",
+    y = "Gap (Male - Female)",
+    color = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text.x = element_text(size = 10, angle = 0),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 10),
+    legend.position = "right",  # Move legend to the right
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+# Print the plot
+print(gap_plot)
+
+# Save the plot as a PDF file
+output_file <- "Gap_Trends_By_Substance_Custom_Right_Legend.pdf"
+ggsave(output_file, plot = gap_plot, width = 14, height = 12, dpi = 300)
+
+# Confirm the file is saved
+cat("Gap trend plot has been saved as", output_file, "\n")
+
+
+```
+
 
