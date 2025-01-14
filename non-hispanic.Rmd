@@ -1,0 +1,112 @@
+---
+title: "Non-hispanic"
+author: "Yining He"
+date: "2025-01-14"
+output: html_document
+---
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file
+data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Gender")
+
+# Prepare the data
+trend_data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%
+  select(Substance, Gender, Year, `Crude Rate Per 100,000`,
+         `Crude Rate Lower 95% Confidence Interval`,
+         `Crude Rate Upper 95% Confidence Interval`) %>%
+  mutate(Gender = as.factor(Gender),
+         Substance = as.factor(Substance))
+
+# Create the line graph with confidence intervals, points, and labels
+plot <- ggplot(trend_data, aes(x = Year, y = `Crude Rate Per 100,000`, 
+                               color = Gender, group = Gender)) +
+  # Add confidence interval ribbons
+  geom_ribbon(aes(ymin = `Crude Rate Lower 95% Confidence Interval`, 
+                  ymax = `Crude Rate Upper 95% Confidence Interval`, 
+                  fill = Gender), alpha = 0.2, color = NA) +
+  # Add lines (solid lines for both genders)
+  geom_line(size = 1, linetype = "solid") +
+  # Add points for each year
+  geom_point(size = 2) +
+  # Add text labels for each point showing the Crude Rate
+  geom_text(aes(label = round(`Crude Rate Per 100,000`, 1)), 
+            vjust = -0.5, size = 3) +
+  facet_wrap(~ Substance, scales = "fixed") +  # Fixed y-axis scales
+  scale_x_continuous(breaks = 2018:2023) +     # Ensure X-axis has 2018-2023
+  scale_y_continuous(breaks = seq(0, max(trend_data$`Crude Rate Per 100,000`), by = 2)) +  # Set Y-axis break interval to 2
+  labs(title = "Trends in Crude Mortality Rates by Substance and Gender (2018-2023)",
+       x = "Year",
+       y = "Crude Rate Per 100,000",
+       color = "Gender",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+# Print the plot
+print(plot)
+
+
+
+
+```
+```{r}
+# Load the data from the Excel file
+data <- read_excel("drugabuse-non hispanic.xlsx", sheet = "Gender")
+
+# Prepare the data
+trend_data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%
+  select(Substance, Gender, Year, `Crude Rate Per 100,000`,
+         `Crude Rate Lower 95% Confidence Interval`,
+         `Crude Rate Upper 95% Confidence Interval`) %>%
+  mutate(Gender = as.factor(Gender),
+         Substance = as.factor(Substance))
+
+# Create the line graph with confidence intervals, points, and labels
+plot <- ggplot(trend_data, aes(x = Year, y = `Crude Rate Per 100,000`, 
+                               color = Gender, group = Gender)) +
+  # Add confidence interval ribbons
+  geom_ribbon(aes(ymin = `Crude Rate Lower 95% Confidence Interval`, 
+                  ymax = `Crude Rate Upper 95% Confidence Interval`, 
+                  fill = Gender), alpha = 0.2, color = NA) +
+  # Add lines (solid lines for both genders)
+  geom_line(size = 1, linetype = "solid") +
+  # Add points for each year
+  geom_point(size = 2) +
+  # Add text labels for each point showing the Crude Rate
+  geom_text(aes(label = round(`Crude Rate Per 100,000`, 1)), 
+            vjust = -0.5, size = 3) +
+  facet_wrap(~ Substance, scales = "fixed", ncol = 2) +  # Set 2 plots per row
+  scale_x_continuous(breaks = seq(2018, 2023, by = 1)) + # Ensure X-axis has every year
+  scale_y_continuous(breaks = seq(0, max(trend_data$`Crude Rate Per 100,000`), by = 2)) +  # Set Y-axis break interval to 2
+  labs(title = "Trends in Crude Mortality Rates by Substance and Gender (2018-2023)",
+       x = "Year",
+       y = "Crude Rate Per 100,000",
+       color = "Gender",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+
+plot <- plot + 
+  theme(plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt"))  # 
+print(plot)
+
+```
+
