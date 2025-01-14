@@ -1,0 +1,263 @@
+---
+title: "whole"
+author: "Yining He"
+date: "2025-01-14"
+output: html_document
+---
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: race-gender)
+file_path <- "whole population.xlsx"
+data <- read_excel(file_path, sheet = "race-gender")
+
+# Prepare the data
+data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%  # Filter years between 2018 and 2023
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Ensure Crude Rate is numeric
+    `Single Race 6` = as.factor(`Single Race 6`),  # Convert race to factor
+    Gender = as.factor(Gender)  # Convert Gender to factor
+  )
+
+# Create the trend plot
+trend_plot <- ggplot(data, aes(x = Year, y = `Crude Rate`, color = Gender, group = Gender)) +
+  geom_line(size = 1.2) +  # Add lines
+  geom_point(size = 3) +  # Add points
+  # Add text labels showing the Crude Rate values
+  geom_text(aes(label = round(`Crude Rate`, 1)), vjust = -0.5, size = 3.5) +
+  facet_wrap(~ `Single Race 6`, ncol = 3, scales = "free_y") +  # Facet by race
+  labs(
+    title = "Crude Rate Trends by Race and Gender (2018-2023)",
+    x = "Year",
+    y = "Crude Rate",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "bottom"
+  )
+
+# Print the plot
+print(trend_plot)
+
+# Save the plot to a file
+ggsave("Crude_Rate_Trends_with_Labels.pdf", plot = trend_plot, width = 14, height = 10)
+
+```
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: race-gender)
+file_path <- "whole population.xlsx"
+data <- read_excel(file_path, sheet = "race-gender")
+
+# Prepare the data
+data <- data %>%
+  filter(Year >= 2018 & Year <= 2023) %>%  # Filter years between 2018 and 2023
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Ensure Crude Rate is numeric
+    `Single Race 6` = as.factor(`Single Race 6`),  # Convert race to factor
+    Gender = as.factor(Gender)  # Convert Gender to factor
+  )
+
+# Pivot the data to calculate the gap
+gap_data <- data %>%
+  select(Year, `Single Race 6`, Gender, `Crude Rate`) %>%
+  pivot_wider(
+    names_from = Gender,
+    values_from = `Crude Rate`
+  ) %>%
+  mutate(Gap = Male - Female)
+
+# Create the gap trend plot
+gap_plot <- ggplot(gap_data, aes(x = Year, y = Gap, color = `Single Race 6`, group = `Single Race 6`)) +
+  geom_line(size = 1.2) +  # Add lines
+  geom_point(size = 3) +  # Add points
+  # Add text labels showing the Gap values
+  geom_text(aes(label = round(Gap, 1)), vjust = -0.5, size = 3.5) +
+  labs(
+    title = "Gap in Crude Rate (Male - Female) by Race (2018-2023)",
+    x = "Year",
+    y = "Gap in Crude Rate",
+    color = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"  # Move legend to the right
+  )
+
+# Print the plot
+print(gap_plot)
+
+# Save the plot to a file
+ggsave("Gap_Crude_Rate_Trends_Legend_Right.pdf", plot = gap_plot, width = 14, height = 10)
+
+```
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: non_latino_race-gender)
+file_path <- "whole population.xlsx"
+data <- read_excel(file_path, sheet = "non_latino_race-gender")
+
+# Filter the data to exclude "Native Hawaiian or Other Pacific Islander"
+data <- data %>%
+  filter(`Single Race 6` != "Native Hawaiian or Other Pacific Islander") %>%
+  filter(Year >= 2018 & Year <= 2023) %>%  # Ensure data is within the year range
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Ensure Crude Rate is numeric
+    `Single Race 6` = as.factor(`Single Race 6`),  # Convert race to factor
+    Gender = as.factor(Gender)  # Convert Gender to factor
+  )
+
+# Create the trend plot with labels
+trend_plot <- ggplot(data, aes(x = Year, y = `Crude Rate`, color = Gender, group = Gender)) +
+  geom_line(size = 1.2) +  # Add lines
+  geom_point(size = 3) +  # Add points
+  # Add text labels showing the Crude Rate values
+  geom_text(aes(label = round(`Crude Rate`, 1)), vjust = -0.5, size = 3.5) +
+  facet_wrap(~ `Single Race 6`, ncol = 2, scales = "free_y") +  # Facet by race
+  labs(
+    title = "Crude Rate Trends by Race and Gender (2018-2023)",
+    x = "Year",
+    y = "Crude Rate",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "right"  # Place legend on the right
+  )
+
+# Print the plot
+print(trend_plot)
+
+# Save the plot to a file
+ggsave("Crude_Rate_Trends_With_Labels.pdf", plot = trend_plot, width = 14, height = 10)
+
+```
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: non_latino_race-gender)
+file_path <- "whole population.xlsx"
+data <- read_excel(file_path, sheet = "non_latino_race-gender")
+
+# Filter the data to exclude "Native Hawaiian or Other Pacific Islander"
+data <- data %>%
+  filter(`Single Race 6` != "Native Hawaiian or Other Pacific Islander") %>%
+  filter(Year >= 2018 & Year <= 2023) %>%  # Ensure data is within the year range
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Ensure Crude Rate is numeric
+    `Single Race 6` = as.factor(`Single Race 6`),  # Convert race to factor
+    Gender = as.factor(Gender)  # Convert Gender to factor
+  )
+
+# Pivot the data to calculate the gap
+gap_data <- data %>%
+  select(Year, `Single Race 6`, Gender, `Crude Rate`) %>%
+  pivot_wider(
+    names_from = Gender,
+    values_from = `Crude Rate`
+  ) %>%
+  mutate(Gap = Male - Female)
+
+# Create the gap trend plot with labels
+gap_plot <- ggplot(gap_data, aes(x = Year, y = Gap, color = `Single Race 6`, group = `Single Race 6`)) +
+  geom_line(size = 1.2) +  # Add lines
+  geom_point(size = 3) +  # Add points
+  # Add text labels showing the Gap values
+  geom_text(aes(label = round(Gap, 1)), vjust = -0.5, size = 3.5) +
+  labs(
+    title = "Gap in Crude Rate (Male - Female) by Race (2018-2023)",
+    x = "Year",
+    y = "Gap in Crude Rate",
+    color = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"  # Place legend on the right
+  )
+
+# Print the plot
+print(gap_plot)
+
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(readxl)
+
+# Load the data from the Excel file (Sheet: non_latino_race-gender)
+file_path <- "whole population.xlsx"
+data <- read_excel(file_path, sheet = "non_latino_race-gender")
+
+# Filter the data to exclude "Native Hawaiian or Other Pacific Islander"
+data <- data %>%
+  filter(`Single Race 6` != "Native Hawaiian or Other Pacific Islander") %>%
+  filter(Year >= 2018 & Year <= 2023) %>%  # Ensure data is within the year range
+  mutate(
+    `Crude Rate` = as.numeric(`Crude Rate`),  # Ensure Crude Rate is numeric
+    `Single Race 6` = as.factor(`Single Race 6`),  # Convert race to factor
+    Gender = as.factor(Gender)  # Convert Gender to factor
+  )
+
+# Pivot the data to calculate the gap
+gap_data <- data %>%
+  select(Year, `Single Race 6`, Gender, `Crude Rate`) %>%
+  pivot_wider(
+    names_from = Gender,
+    values_from = `Crude Rate`
+  ) %>%
+  mutate(Gap = Male - Female)
+
+# Create the gap trend plot with labels
+gap_plot <- ggplot(gap_data, aes(x = Year, y = Gap, color = `Single Race 6`, group = `Single Race 6`)) +
+  geom_line(size = 1.2) +  # Add lines
+  geom_point(size = 3) +  # Add points
+  # Add text labels showing the Gap values
+  geom_text(aes(label = round(Gap, 1)), vjust = -0.5, size = 3.5) +
+  labs(
+    title = "Gap in Crude Rate (Male - Female) by Race (2018-2023)",
+    x = "Year",
+    y = "Gap in Crude Rate",
+    color = "Race"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"  # Place legend on the right
+  )
+
+# Print the plot
+print(gap_plot)
+
+# Save the plot to a file
+ggsave("Gap_Crude_Rate_Trends_With_Labels.pdf", plot = gap_plot, width = 14, height = 10)
+
+
+```
+
